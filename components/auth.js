@@ -9,7 +9,7 @@ router.get('/checkauth', async (req, res) => {
         if (err) {
             res.send("DISCONNECTED")
             try {
-                fs.unlinkSync('../session.json')
+                fs.unlinkSync('/app/runtime/session.json')
             } catch(err) {
                 console.log(err)
             }
@@ -20,8 +20,8 @@ router.get('/checkauth', async (req, res) => {
 router.get('/getqr', (req,res) => {
     var qrjs = fs.readFileSync('components/qrcode.js');
 
-    fs.readFile('components/last.qr', (err,last_qr) => {
-        fs.readFile('session.json', (serr, sessiondata) => {
+    fs.readFile('/app/runtime/last.qr', (err,last_qr) => {
+        fs.readFile('/app/runtime/session.json', (serr, sessiondata) => {
             if (err && sessiondata) {
                 res.write("<html><body><h2>Already Authenticated</h2></body></html>");
                 res.end();
