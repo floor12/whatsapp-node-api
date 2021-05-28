@@ -40,6 +40,12 @@
 
 <hr>
 
+<u>Get Chat Messages By Id</u>
+``GET : /chat/getmessagesbyid/<phone_number>``
+>Returns array of last 100 messages
+
+<hr>
+
 <u>Get Chats</u>
 ``GET : /chat/getchats``
 >Returns an Array of all Chats

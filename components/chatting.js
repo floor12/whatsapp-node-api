@@ -52,7 +52,7 @@ router.post('/sendimage/:phone', async (req,res) => {
             var path = './temp/' + image.split("/").slice(-1)[0]
             mediadownloader(image, path, () => {
                 let media = MessageMedia.fromFilePath(path);
-                
+
                 client.sendMessage(`${phone}@c.us`, media, { caption: caption || '' }).then((response) => {
                     if (response.id.fromMe) {
                         res.send({ status: 'success', message: `MediaMessage successfully sent to ${phone}` })
@@ -109,7 +109,7 @@ router.post('/sendlocation/:phone', async (req, res) => {
     let longitude = req.body.longitude;
     let desc = req.body.description;
 
-    if (phone == undefined || latitude == undefined || longitude == undefined) { 
+    if (phone == undefined || latitude == undefined || longitude == undefined) {
         res.send({ status: "error", message: "please enter valid phone, latitude and longitude" })
     } else {
         let loc = new Location(latitude, longitude, desc || "");
@@ -128,6 +128,23 @@ router.get('/getchatbyid/:phone', async (req, res) => {
     } else {
         client.getChatById(`${phone}@c.us`).then((chat) => {
             res.send({ status:"success", message: chat });
+        }).catch(() => {
+            console.error("getchaterror")
+            res.send({ status: "error", message: "getchaterror" })
+        })
+    }
+});
+
+router.get('/getmessagesbyid/:phone', async (req, res) => {
+    let phone = req.params.phone;
+    if (phone == undefined) {
+        res.send({status:"error",message:"please enter valid phone number"});
+    } else {
+        client.getChatById(`${phone}@c.us`).then((chat) => {
+            chat.fetchMessages({limit:100}).then((messages) => {
+                res.send({ status:"success", message: messages });
+            });
+
         }).catch(() => {
             console.error("getchaterror")
             res.send({ status: "error", message: "getchaterror" })
