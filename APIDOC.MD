@@ -46,6 +46,11 @@
 
 <hr>
 
+<u>Mark chat as seen</u>
+``GET : /chat/setseen/<phone_number>``
+
+<hr>
+
 <u>Get Chats</u>
 ``GET : /chat/getchats``
 >Returns an Array of all Chats

@@ -1,47 +1,53 @@
 const router = require('express').Router();
-const { MessageMedia, Location } = require("whatsapp-web.js");
+const {MessageMedia, Location} = require("whatsapp-web.js");
 const request = require('request')
 const vuri = require('valid-url');
-const fs = require('fs');
+const fs = require(' fs');
 
 const mediadownloader = (url, path, callback) => {
     request.head(url, (err, res, body) => {
-      request(url)
-        .pipe(fs.createWriteStream(path))
-        .on('close', callback)
+        request(url)
+            .pipe(fs.createWriteStream(path))
+            .on('close', callback)
     })
-  }
+}
 
-router.post('/sendmessage/:phone', async (req,res) => {
-    let phone = req.params.phone;
-    let message = req.body.message;
+const SendAndLogError = (exception, response, code = 400) => {
+    console.error(exception);
+    response.statusCode = code;
+    response.send({status: "error", message: "Something went wrong"})
+}
 
-    if (phone == undefined || message == undefined) {
-        res.send({ status:"error", message:"please enter valid phone and message" })
+router.post('/sendmessage/:phone', async (request, response) => {
+    let phone = request.params.phone;
+    let message = request.body.message;
+
+    if (phone === undefined || message === undefined) {
+        response.send({status: "error", message: "please enter valid phone and message"})
     } else {
-        client.sendMessage(phone + '@c.us', message).then((response) => {
-            if (response.id.fromMe) {
-                res.send({ status:'success', message: `Message successfully sent to ${phone}` })
+        client.sendMessage(phone + '@c.us', message).then((res) => {
+            if (res.id.fromMe) {
+                response.send({status: 'success', message: `Message successfully sent to ${phone}`})
             }
         });
     }
 });
 
-router.post('/sendimage/:phone', async (req,res) => {
+router.post('/sendimage/:phone', async (request, response) => {
     var base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
 
-    let phone = req.params.phone;
-    let image = req.body.image;
-    let caption = req.body.caption;
+    let phone = request.params.phone;
+    let image = request.body.image;
+    let caption = request.body.caption;
 
-    if (phone == undefined || image == undefined) {
-        res.send({ status: "error", message: "please enter valid phone and base64/url of image" })
+    if (phone === undefined || image === undefined) {
+        response.send({status: "error", message: "please enter valid phone and base64/url of image"})
     } else {
         if (base64regex.test(image)) {
-            let media = new MessageMedia('image/png',image);
-            client.sendMessage(`${phone}@c.us`, media, { caption: caption || '' }).then((response) => {
-                if (response.id.fromMe) {
-                    res.send({ status: 'success', message: `MediaMessage successfully sent to ${phone}` })
+            let media = new MessageMedia('image/png', image);
+            client.sendMessage(`${phone}@c.us`, media, {caption: caption || ''}).then((res) => {
+                if (res.id.fromMe) {
+                    response.send({status: 'success', message: `MediaMessage successfully sent to ${phone}`})
                 }
             });
         } else if (vuri.isWebUri(image)) {
@@ -53,33 +59,33 @@ router.post('/sendimage/:phone', async (req,res) => {
             mediadownloader(image, path, () => {
                 let media = MessageMedia.fromFilePath(path);
 
-                client.sendMessage(`${phone}@c.us`, media, { caption: caption || '' }).then((response) => {
-                    if (response.id.fromMe) {
-                        res.send({ status: 'success', message: `MediaMessage successfully sent to ${phone}` })
+                client.sendMessage(`${phone}@c.us`, media, {caption: caption || ''}).then((res) => {
+                    if (res.id.fromMe) {
+                        response.send({status: 'success', message: `MediaMessage successfully sent to ${phone}`})
                         fs.unlinkSync(path)
                     }
                 });
             })
         } else {
-            res.send({ status:'error', message: 'Invalid URL/Base64 Encoded Media' })
+            response.send({status: 'error', message: 'Invalid URL/Base64 Encoded Media'})
         }
     }
 });
 
-router.post('/sendpdf/:phone', async (req,res) => {
+router.post('/sendpdf/:phone', async (request, response) => {
     var base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
 
-    let phone = req.params.phone;
-    let pdf = req.body.pdf;
+    let phone = request.params.phone;
+    let pdf = request.body.pdf;
 
-    if (phone == undefined || pdf == undefined) {
-        res.send({ status: "error", message: "please enter valid phone and base64/url of pdf" })
+    if (phone === undefined || pdf === undefined) {
+        response.send({status: "error", message: "please enter valid phone and base64/url of pdf"})
     } else {
         if (base64regex.test(pdf)) {
             let media = new MessageMedia('application/pdf', pdf);
             client.sendMessage(`${phone}@c.us`, media).then((response) => {
                 if (response.id.fromMe) {
-                    res.send({ status: 'success', message: `MediaMessage successfully sent to ${phone}` })
+                    response.send({status: 'success', message: `MediaMessage successfully sent to ${phone}`})
                 }
             });
         } else if (vuri.isWebUri(pdf)) {
@@ -92,71 +98,89 @@ router.post('/sendpdf/:phone', async (req,res) => {
                 let media = MessageMedia.fromFilePath(path);
                 client.sendMessage(`${phone}@c.us`, media).then((response) => {
                     if (response.id.fromMe) {
-                        res.send({ status: 'success', message: `MediaMessage successfully sent to ${phone}` })
+                        response.send({status: 'success', message: `MediaMessage successfully sent to ${phone}`})
                         fs.unlinkSync(path)
                     }
                 });
             })
         } else {
-            res.send({ status: 'error', message: 'Invalid URL/Base64 Encoded Media' })
+            response.send({status: 'error', message: 'Invalid URL/Base64 Encoded Media'})
         }
     }
 });
 
-router.post('/sendlocation/:phone', async (req, res) => {
-    let phone = req.params.phone;
-    let latitude = req.body.latitude;
-    let longitude = req.body.longitude;
-    let desc = req.body.description;
+router.post('/sendlocation/:phone', async (request, response) => {
+    let phone = request.params.phone;
+    let latitude = request.body.latitude;
+    let longitude = request.body.longitude;
+    let desc = request.body.description;
 
-    if (phone == undefined || latitude == undefined || longitude == undefined) {
-        res.send({ status: "error", message: "please enter valid phone, latitude and longitude" })
+    if (phone === undefined || latitude === undefined || longitude === undefined) {
+        response.send({status: "error", message: "please enter valid phone, latitude and longitude"})
     } else {
         let loc = new Location(latitude, longitude, desc || "");
-        client.sendMessage(`${phone}@c.us`, loc).then((response)=>{
+        client.sendMessage(`${phone}@c.us`, loc).then((response) => {
             if (response.id.fromMe) {
-                res.send({ status: 'success', message: `MediaMessage successfully sent to ${phone}` })
+                response.send({status: 'success', message: `MediaMessage successfully sent to ${phone}`})
             }
         });
     }
 });
 
-router.get('/getchatbyid/:phone', async (req, res) => {
-    let phone = req.params.phone;
-    if (phone == undefined) {
-        res.send({status:"error",message:"please enter valid phone number"});
+router.get('/getchatbyid/:phone', async (request, response) => {
+    let phone = request.params.phone;
+    if (phone === undefined) {
+        response.send({status: "error", message: "please enter valid phone number"});
     } else {
         client.getChatById(`${phone}@c.us`).then((chat) => {
-            res.send({ status:"success", message: chat });
-        }).catch(() => {
-            console.error("getchaterror")
-            res.send({ status: "error", message: "getchaterror" })
+            response.send({status: "success", message: chat});
+        }).catch((exception) => {
+            SendAndLogError(exception, response);
         })
     }
 });
 
-router.get('/getmessagesbyid/:phone', async (req, res) => {
-    let phone = req.params.phone;
-    if (phone == undefined) {
-        res.send({status:"error",message:"please enter valid phone number"});
+router.get('/getmessagesbyid/:phone', async (request, response) => {
+    let phone = request.params.phone;
+    let setSeen = request.query.setSeen
+    if (phone === undefined) {
+        response.send({status: "error", message: "please enter valid phone number"});
     } else {
         client.getChatById(`${phone}@c.us`).then((chat) => {
-            chat.fetchMessages({limit:100}).then((messages) => {
-                res.send({ status:"success", message: messages });
+            chat.fetchMessages({limit: 100}).then((messages) => {
+                response.send({status: "success", message: messages});
             });
 
-        }).catch(() => {
-            console.error("getchaterror")
-            res.send({ status: "error", message: "getchaterror" })
+            if (setSeen === 'true') {
+                console.log('set seen');
+                chat.sendSeen();
+            }
+        }).catch((exception) => {
+            SendAndLogError(exception, response);
         })
     }
 });
 
-router.get('/getchats', async (req, res) => {
+router.get('/setseen/:phone', async (request, response) => {
+    let phone = request.params.phone;
+    if (phone === undefined) {
+        response.send({status: "error", message: "please enter valid phone number"});
+    } else {
+        client.getChatById(`${phone}@c.us`).then((chat) => {
+            chat.sendSeen().then(() => {
+                response.send({status: "success"});
+            });
+        }).catch((exception) => {
+            SendAndLogError(exception, response);
+        })
+    }
+});
+
+router.get('/getchats', async (request, response) => {
     client.getChats().then((chats) => {
-        res.send({ status: "success", message: chats});
-    }).catch(() => {
-        res.send({ status: "error",message: "getchatserror" })
+        response.send({status: "success", message: chats});
+    }).catch((exception) => {
+        SendAndLogError(exception, response);
     })
 });
 
