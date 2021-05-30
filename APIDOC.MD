@@ -6,6 +6,13 @@
 	- If not logged in, returns a **QR Code**
 	- If logged in, returns a "Authenticated" message.
 
+<u>Check auth</u>
+``GET : /auth/checkauth``
+
+
+<u>Logout</u>
+``POST : /auth/logout``
+
 ## Chat
 <u>Sending Messages</u>
 ``POST : /chat/sendmessage/<phone_number>``
